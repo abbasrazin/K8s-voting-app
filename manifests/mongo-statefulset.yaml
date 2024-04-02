@@ -3,32 +3,36 @@ kind: StatefulSet
 metadata:
   name: mongo
   namespace: cloudchamp
-spec:
+spec:                          #Specifies the desired state of the StatefulSet
   serviceName: mongo
   replicas: 3
   selector:
-    matchLabels:
+    matchLabels:               #Specifies the labels that Pods must have to be managed by this 
       role: db
-  template:
+  template:                    #Describes the Pod template that will be used to create new Pods managed by this StatefulSet.
     metadata:
       labels:
         role: db
         env: demo
-        replicaset: rs0.main
+        replicaset: rs0.main    # Indicates that Pods created from this template will have the label replicaset: rs0.main.
     spec:
-      affinity:
-        podAntiAffinity:
+      affinity:                        # This section defines affinity and anti-affinity rules for the StatefulSet's Pods.
+        podAntiAffinity:               # This configuration ensures that Pods managed by the StatefulSet will be preferably scheduled onto nodes that don't already have Pods with the label replicaset: rs0.main
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
+            - weight: 100              # the weight of 100 signifies that the anti-affinity rule (avoiding scheduling Pods onto nodes) is strongly preferred.
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
                     - key: replicaset
-                      operator: In
+                      operator: In     #The operator: In indicates that the label value must be within the provided list (which, in this case, contains only one value: rs0.main) 
+                                        #  for the match to succeed.
                       values:
                         - rs0.main
-                topologyKey: kubernetes.io/hostname
-      terminationGracePeriodSeconds: 10
+                topologyKey: kubernetes.io/hostname    #The topologyKey is set to kubernetes.io/hostname, which means that the anti-affinity rules are applied based on the hostname of the nodes. 
+                                                       # This ensures that Pods managed by the StatefulSet are preferably scheduled onto nodes with different hostnames.
+                                                       
+      terminationGracePeriodSeconds: 10           # The terminationGracePeriodSeconds field specifies the period of time in seconds that the 
+                                                  # StatefulSet controller will wait for the StatefulSet's Pods to gracefully terminate before forcibly terminating them.
       containers:
         - name: mongo
           image: mongo:4.2
@@ -36,24 +40,26 @@ spec:
             - "numactl"
             - "--interleave=all"
             - "mongod"
-            - "--wiredTigerCacheSizeGB"
+            - "--wiredTigerCacheSizeGB"   # The WiredTiger storage engine utilizes memory-mapped files and maintains an internal cache to improve performance.
             - "0.1"
             - "--bind_ip"
             - "0.0.0.0"
             - "--replSet"
             - "rs0"
           ports:
-            - containerPort: 27017
+            - containerPort: 27017  # By exposing port 27017, you're allowing other services to connect to MongoDB running inside the container. 
+                                    # This port is where MongoDB listens for incoming client connections, such as those from applications, other services, or MongoDB client tools.
           volumeMounts:
             - name: mongodb-persistent-storage-claim
               mountPath: /data/db
-  volumeClaimTemplates:
+  volumeClaimTemplates:         # This field specifies a list of PersistentVolumeClaim templates that will be created for each Pod in the StatefulSet.
     - metadata:
         name: mongodb-persistent-storage-claim
       spec:
         accessModes:
-          - ReadWriteOnce
+          - ReadWriteOnce   # Typically used for scenarios where a volume needs to be mounted as read-write by a single Pod running on a single node. 
+                            # It's suitable for scenarios like database storage where a single node needs read-write access to the data.
         storageClassName: gp2
         resources:
           requests:
-            storage: 0.5Gi
+            storage: 0.5Gi # For each pod
