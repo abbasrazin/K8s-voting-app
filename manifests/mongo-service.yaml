@@ -6,10 +6,12 @@ metadata:
   labels:
     role: db
     env: demo
-spec:
+spec:                     # Specifies the desired state of the Service.
   ports:
-  - port: 27017
-    targetPort: 27017
-  clusterIP: None
+  - port: 27017           # Specifies that the Service will listen on port 27017.
+    targetPort: 27017     # Specifies the port on the Pods to which traffic will be forwarded
+  clusterIP: None         # Indicates that the Service does not have a cluster IP address. This is typical for headless Services, 
+                          # where no virtual IP is assigned, and DNS resolution is used instead.
+                          # With DNS resolution, you can directly access individual Pods that belong to the Service without going through a load balancer. 
   selector:
     role: db
