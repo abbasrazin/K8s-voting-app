@@ -19,7 +19,7 @@ spec:                          #Specifies the desired state of the StatefulSet
       affinity:                        # This section defines affinity and anti-affinity rules for the StatefulSet's Pods.
         podAntiAffinity:               # This configuration ensures that Pods managed by the StatefulSet will be preferably scheduled onto nodes that don't already have Pods with the label replicaset: rs0.main
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100              # the weight of 100 signifies that the anti-affinity rule (avoiding scheduling Pods onto nodes) is strongly preferred.
+            - weight: 100              # the weight of 100 signifies that the anti-affinity rule (avoiding scheduling Pods in a single node) is strongly preferred.
               podAffinityTerm:
                 labelSelector:
                   matchExpressions:
@@ -31,8 +31,8 @@ spec:                          #Specifies the desired state of the StatefulSet
                 topologyKey: kubernetes.io/hostname    #The topologyKey is set to kubernetes.io/hostname, which means that the anti-affinity rules are applied based on the hostname of the nodes. 
                                                        # This ensures that Pods managed by the StatefulSet are preferably scheduled onto nodes with different hostnames.
                                                        
-      terminationGracePeriodSeconds: 10           # The terminationGracePeriodSeconds field specifies the period of time in seconds that the 
-                                                  # StatefulSet controller will wait for the StatefulSet's Pods to gracefully terminate before forcibly terminating them.
+      terminationGracePeriodSeconds: 10           # This means that when a Pod managed by the StatefulSet receives a termination signal (e.g., SIGTERM) 
+                                                  # indicating that it should shut down, it has up to 10 seconds to perform any necessary cleanup
       containers:
         - name: mongo
           image: mongo:4.2
@@ -43,7 +43,7 @@ spec:                          #Specifies the desired state of the StatefulSet
             - "--wiredTigerCacheSizeGB"   # The WiredTiger storage engine utilizes memory-mapped files and maintains an internal cache to improve performance.
             - "0.1"
             - "--bind_ip"
-            - "0.0.0.0"
+            - "0.0.0.0" # When you bind MongoDB to 0.0.0.0, it means that MongoDB will listen for connections on all network interfaces available on the server.
             - "--replSet"
             - "rs0"
           ports:
