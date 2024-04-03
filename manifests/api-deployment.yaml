@@ -9,10 +9,11 @@ metadata:
 spec:
   replicas: 2
   strategy:
-    type: RollingUpdate
+    type: RollingUpdate          # new Pods are gradually created and old Pods are gradually terminated
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 25%
+      maxSurge: 1                # This parameter controls how many new Pods (during the new pods (updated pod config)) can be created above the desired number of replicas.
+      maxUnavailable: 25%        # Specifies the maximum percentage or absolute number of Pods that can be unavailable during the update process. 
+                                 # This parameter controls how many old Pods can be terminated at a time.
   selector:
     matchLabels:
       role: api
@@ -26,7 +27,9 @@ spec:
         image: cloudacademydevops/api:v3
         imagePullPolicy: Always
         env:
-          - name: MONGO_CONN_STR
+          - name: MONGO_CONN_STR           # It's a MongoDB connection string that points to a replica set named "rs0" and includes the hostnames and port numbers of the 
+                                          # MongoDB instances (mongo-0.mongo, mongo-1.mongo, mongo-2.mongo) as well as the database name (langdb).
+                                          # This connection string is crucial for the application running inside the container to establish a connection with the MongoDB replica set.
             value: mongodb://mongo-0.mongo,mongo-1.mongo,mongo-2.mongo:27017/langdb?replicaSet=rs0
           - name: MONGO_USERNAME
             valueFrom:
@@ -40,16 +43,17 @@ spec:
                 key: password
         ports:
         - containerPort: 8080
-        livenessProbe:
+        livenessProbe:                  # This field specifies the probe used to determine if the container is still running correctly.
           httpGet:
             path: /ok
             port: 8080
-          initialDelaySeconds: 2
-          periodSeconds: 5
-        readinessProbe:
+          initialDelaySeconds: 2       # the number of seconds Kubernetes should wait after the container has started before initiating the probe.
+          periodSeconds: 5             # how often Kubernetes should perform the probe after the initial delay.
+          
+        readinessProbe:                # This field specifies the probe used to determine if the container is ready to serve traffic.
           httpGet:
              path: /ok
              port: 8080
           initialDelaySeconds: 5
           periodSeconds: 5
-          successThreshold: 1
+          successThreshold: 1          # This specifies the number of consecutive successful probes required for the container to be considered ready to serve traffic.
